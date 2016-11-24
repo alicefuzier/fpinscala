@@ -1,3 +1,5 @@
+import fpinscala.datastructures.List
+import fpinscala.datastructures.Cons
+import fpinscala.datastructures.Nil
 
-
-List(1,2,3).foldLeft( Nil:List[Int])((l:List[Int],i: Int) => i:: l)
+List.reverse(List(1,2,3))
