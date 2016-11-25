@@ -140,5 +140,27 @@ object List {
 
   def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] = flatMap(l)(a=>if(f(a)) List(a) else Nil)
 
-  def addElementsOf(a1: List[Int], a2: List[Int]): List[Int] =
+  def addElementsOf(a1: List[Int], a2: List[Int]): List[Int] = (a1,a2) match {
+    case (Nil,_ )=> Nil
+    case (_,Nil) => Nil
+    case (Cons(h1,t1), Cons(h2,t2)) => Cons(h1+h2, addElementsOf(t1,t2))
+  }
+
+  def zipWith[A,B,C](a1: List[A], a2: List[B])(f:(A,B)=>C): List[C] = (a1,a2) match {
+    case (Nil,_ )=> Nil
+    case (_,Nil) => Nil
+    case (Cons(h1,t1), Cons(h2,t2)) => Cons(f(h1,h2), zipWith(t1,t2)(f))
+  }
+
+  def startsWith[A](sup: List[A], sub: List[A]): Boolean = (sub, sup)match{
+      case(_,Nil)=>true
+      case (Cons(h1,t1),Cons(h2,t2)) if(h1==h2) startsWith(t1,t2) => true
+      case _ => false
+  }
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
+    case Nil => sub == Nil
+    case _ if startsWith(sup, sub) =>true
+    case Cons(h,t) => hasSubsequence(t,sub)
+  }
 }
