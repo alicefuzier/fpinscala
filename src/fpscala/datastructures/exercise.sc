@@ -2,4 +2,4 @@ import fpinscala.datastructures.List
 import fpinscala.datastructures.Cons
 import fpinscala.datastructures.Nil
 
-List.reverse(List(1,2,3))
+List.append2(List(1,2),LisT(3,4))

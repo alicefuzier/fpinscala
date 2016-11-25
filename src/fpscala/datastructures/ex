@@ -1,12 +1,16 @@
 foldLeft(List(1,2,3),0)(x+y)
-foldLeft(List(2,3),1)(x+y)
-foldLeft(List(2),3)(x+y)
+foldLeft(List(2,3),0+1)(x+y)
+foldLeft(List(3),1+2)(x+y)
+foldLeft(Nil,1+2+3)(x+y)
+1+2+3
 5
 
 foldRight(List(1,2,3),0)(x+y)
 1+foldRight(List(2,3),0)(x+y)
 1+2+foldRight(List(3),0)(x+y)
-1+2+3
+1+2+3+foldRight(Nil,0)(x+y)
+1+2+3+0
+5
 
 
   def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = // Utility functions
@@ -25,3 +29,5 @@ foldLeft(List(1,2,3), Nil)((b: List[A], a: A) => Cons(a, b))
 foldLeft(List(2,3),Cons(1,Nil))((b: List[A], a: A) => Cons(a, b))
 foldLeft(List(3),Cons(2,Cons(1,Nil)))((b: List[A], a: A) => Cons(a, b))
 Cons(3,Cons(2,Cons(1,Nil)))
+
+append(List(1,2),List(2,3)

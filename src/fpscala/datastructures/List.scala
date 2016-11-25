@@ -15,7 +15,6 @@ def sum(ints: List[Int]): Int = ints match { // A function that uses pattern mat
     case Cons(0.0, _) => 0.0
     case Cons(x,xs) => x * product(xs)
   }
-
   def apply[A](as: A*): List[A] = // Variadic function syntax
     if (as.isEmpty) Nil
     else Cons(as.head, apply(as.tail: _*))
@@ -116,6 +115,8 @@ def sum(ints: List[Int]): Int = ints match { // A function that uses pattern mat
 
   def foldLeftViaFoldRight[A,B](l: List[A], z: B)(f: (B,A) => B): B =
     foldRight(l, (b:B) => b)((a,g) => b => g(f(b,a)))(z)
+
+  def append2[A](a1: List[A], a2: List[A]): List[A] = foldRight(a1,a2)((a:A,b:List[A])=>Cons(a,b))
 
   def map[A,B](l: List[A])(f: A => B): List[B] = ???
 }
