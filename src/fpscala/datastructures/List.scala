@@ -154,7 +154,7 @@ object List {
 
   def startsWith[A](sup: List[A], sub: List[A]): Boolean = (sub, sup)match{
       case(_,Nil)=>true
-      case (Cons(h1,t1),Cons(h2,t2)) if(h1==h2) startsWith(t1,t2) => true
+      case (Cons(h1,t1),Cons(h2,t2)) if(h1==h2) => startsWith(t1,t2)
       case _ => false
   }
 
