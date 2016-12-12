@@ -99,6 +99,7 @@ trait Stream[+A] {
   }
 
   def startsWith[B](s: Stream[B]): Boolean = this.zipAll(s).takeWhile(_._2.isDefined).forAll( a=> a._1 == a._2)
+
   def tails: Stream[Stream[A]] = unfold(this){
     case Empty => None
     case Cons(h,t) => Some(cons(h(),t()),t())
