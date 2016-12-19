@@ -1,6 +1,6 @@
 package fpinscala.state
 
-import fpinscala.state.State.{get, sequence, unit}
+import fpinscala.state.State.{get, modify, sequence, unit}
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
@@ -133,7 +133,7 @@ object State {
     _ <- set(f(s)) // Sets the new state to `f` applied to `s`.
   } yield ()
 
-  def modify2[S](f: S => S): State[S, Unit] = get.flatMap(x=> set(f(x)))
+  def modify2[S](f: S => S): State[S, Unit] = get.flatMap(x=> set(f(x)).map(_=>()))
 
   def get[S]: State[S, S] = State(s => (s, s))
 
@@ -152,8 +152,8 @@ case class Machine(locked: Boolean, candies: Int, coins: Int){
 object CandyMachine {
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
     _ <- sequence[Machine, Unit](inputs.map {
-      case Coin => State[Machine, Unit](machine => ((), machine.coinInserted))
-      case Turn => State[Machine, Unit](machine => ((), machine.knobTurned))
+      case Coin => modify[Machine](_.coinInserted)
+      case Turn => modify[Machine](_.knobTurned)
     })
     s <- get
   } yield (s.coins, s.candies)
