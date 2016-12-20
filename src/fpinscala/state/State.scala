@@ -151,7 +151,7 @@ case class Machine(locked: Boolean, candies: Int, coins: Int){
 }
 object CandyMachine {
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
-    _ <- sequence[Machine, Unit](inputs.map {
+    _ <- sequence(inputs.map {
       case Coin => modify[Machine](_.coinInserted)
       case Turn => modify[Machine](_.knobTurned)
     })
