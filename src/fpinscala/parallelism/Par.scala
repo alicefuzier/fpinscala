@@ -29,7 +29,9 @@ object Par {
       def call = a(es).get
     })
 
-  def map[A,B](pa: Par[A])(f: A => B): Par[B] = 
+  def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
+
+  def map[A,B](pa: Par[A])(f: A => B): Par[B] =
     map2(pa, unit(()))((a,_) => f(a))
 
   def sortPar(parList: Par[List[Int]]) = map(parList)(_.sorted)
@@ -44,6 +46,37 @@ object Par {
     es => 
       if (run(es)(cond).get) t(es) // Notice we are blocking on the result of `cond`.
       else f(es)
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] = es => choices(run(es)(n).get)(es)
+
+  def choiceViaChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] = choiceN(map(cond)(b=> if(b)0 else 1))(List(t,f))
+
+  def choiceMap[K,V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] = es =>
+    {
+      val k: K = run(es)(key).get
+      val serviceToFuture = choices(k)
+      run(es)(serviceToFuture)
+    }
+
+  def flatMap[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] = es => run(es)(choices(run(es)(pa).get))
+
+  def choiceViaFlatMap[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] = flatMap(cond)(b=> if(b)t else f)
+
+  def choiceNViaFlatMap[A](n: Par[Int])(choices: List[Par[A]]): Par[A] = flatMap(n)(i=> choices(i))
+
+  def join[A](a: Par[Par[A]]): Par[A] = es => {
+    run(es)(run(es)(a).get())
+  }
+
+  def flatMapViaJoin[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] = join(map(pa)(choices))
+
+  def joinViaFlatMap[A](a: Par[Par[A]]): Par[A] = flatMap(a)(a=>a)
+
+  def sequence[A](ps: List[Par[A]]): Par[List[A]] = {
+    ps.foldRight(unit(Nil):Par[List[A]])((a,acc)=>map2(a,acc)((a,b)=>{
+      a :: b
+    }))
+  }
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
@@ -64,7 +97,13 @@ object Examples {
       sum(l) + sum(r) // Recursively sum both halves and add the results together.
     }
 
-  def asyncF[A,B](f: A => B): A => Par[B] = {
+  def asyncF[A,B](f: A => B): A => Par[B] = a=>{
+    lazyUnit(f(a))
+  }
 
+  def parFilter[A](as: List[A])(f: A => Boolean): Par[List[A]] = {
+    val pars: List[Par[List[A]]] =
+      as map asyncF((a: A) => if (f(a)) List(a) else List())
+    map(sequence(pars))(_.flatten)
   }
 }
