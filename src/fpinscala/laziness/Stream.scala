@@ -80,10 +80,13 @@ trait Stream[+A] {
     case _ => None
   }
 
-  def zipWithViaUnfold[B,C](a2: Stream[B])(f:(A,B)=>C): Stream[C] = unfold((this,a2)){
+  def zipWith[B,C](a2: Stream[B])(f:(A,B)=>C): Stream[C] = unfold((this,a2)){
     case(Cons(h1,t1),Cons(h2,t2)) => Some((f(h1(),h2()),(t1(),t2())))
     case _ => None
   }
+
+  def zip[B](s2: Stream[B]): Stream[(A,B)] =
+    zipWith(s2)((_,_))
 
   def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = unfold((this,s2)){
     case (Empty,Empty) => None
