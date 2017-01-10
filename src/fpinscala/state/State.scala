@@ -41,6 +41,9 @@ object RNG {
     (i/(Int.MaxValue.toDouble+1), rng2)
   }
 
+  def boolean(rng: RNG): (Boolean, RNG) =
+    rng.nextInt match { case (i,rng2) => (i%2==0,rng2) }
+
   def doubleViaMap: Rand[Double] = map(nonNegativeInt)(i=> i/(Int.MaxValue.toDouble+1))
 
   def intDouble(rng: RNG): ((Int,Double), RNG) = {
