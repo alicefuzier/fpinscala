@@ -7,7 +7,6 @@ import fpinscala.parsing.Representation.Parser
 import fpinscala.state.State
 import fpinscala.testing.Gen
 
-import testing._
 import language.higherKinds
 
 
@@ -108,6 +107,11 @@ object Monad {
     override def flatMap[A, B](ma: Id[A])(f: (A) => Id[B]): Id[B] = ma.flatMap(f)
   }
 
+  def eitherMonad[E]: Monad[({type f[x] = Either[E, x]})#f] = new Monad[({type f[x] = Either[E, x]})#f] {
+    override def unit[A](a: => A): Either[E, A] = Right(a)
+
+    override def flatMap[A, B](ma: Either[E, A])(f: (A) => Either[E, B]): Either[E, B] = ma.flatMap(f)
+  }
 }
 
 case class Id[A](value: A) {
