@@ -1,5 +1,8 @@
 package fpinscala.iomonad
 
+import fpinscala.iomonad.IO2c.{FlatMap, Return, Suspend}
+import fpinscala.parallelism.Nonblocking.Par
+
 import language.postfixOps
 import language.higherKinds
 import scala.io.StdIn.readLine
@@ -372,18 +375,41 @@ object IO3 {
                                f: A => Free[F, B]) extends Free[F, B]
 
   // Exercise 1: Implement the free monad
-  def freeMonad[F[_]]: Monad[({type f[a] = Free[F,a]})#f] = ???
+  def freeMonad[F[_]]: Monad[({type f[a] = Free[F,a]})#f] = new Monad[({type f[a] = Free[F,a]})#f] {
+    override def unit[A](a: => A): Free[F, A] = Return(a)
+
+    override def flatMap[A, B](a: Free[F, A])(f: (A) => Free[F, B]): Free[F, B] = FlatMap(a,f)
+  }
 
   // Exercise 2: Implement a specialized `Function0` interpreter.
-  // @annotation.tailrec
-  def runTrampoline[A](a: Free[Function0,A]): A = ???
+  @annotation.tailrec
+  def runTrampoline[A](fa: Free[Function0,A]): A =  fa match {
+    case Return(a) => a
+    case Suspend(r) => r()
+    case FlatMap(x, f) => x match {
+      case Return(a) => run(f(a))
+      case Suspend(r) => run(f(r()))
+      case FlatMap(y, g) => run(y flatMap ((a: Any) => g(a) flatMap f))
+    }
+  }
 
   // Exercise 3: Implement a `Free` interpreter which works for any `Monad`
-  def run[F[_],A](a: Free[F,A])(implicit F: Monad[F]): F[A] = ???
+  def run[F[_],A](freeFa: Free[F,A])(implicit F: Monad[F]): F[A] = step(freeFa) match {
+    case Return(a) => F.unit(a)
+    case Suspend(r) => r
+    case FlatMap(x, f) => x match {
+      case Suspend(r) => F.flatMap(r)(a=>run(f(a)))
+      case _ => sys.error("Impossible, since `step` eliminates these cases")
+    }
+  }
 
   // return either a `Suspend`, a `Return`, or a right-associated `FlatMap`
-  // @annotation.tailrec
-  def step[F[_],A](a: Free[F,A]): Free[F,A] = ???
+  @annotation.tailrec
+  def step[F[_],A](freeFa: Free[F,A]): Free[F,A] = freeFa match {
+    case FlatMap(FlatMap(x, f), g) => step(x flatMap (a => f(a) flatMap g))
+    case FlatMap(Return(x), f) => step(f(x))
+    case _ => freeFa
+  }
 
   /*
   The type constructor `F` lets us control the set of external requests our
@@ -490,9 +516,17 @@ object IO3 {
   // Exercise 4 (optional, hard): Implement `runConsole` using `runFree`,
   // without going through `Par`. Hint: define `translate` using `runFree`.
 
-  def translate[F[_],G[_],A](f: Free[F,A])(fg: F ~> G): Free[G,A] = ???
+  def translate[F[_],G[_],A](f: Free[F,A])(fg: F ~> G): Free[G,A] = {
+    type FreeG[A] = Free[G,A]
+    val t = new (F ~> FreeG) {
+      def apply[A](a: F[A]): Free[G,A] = Suspend { fg(a) }
+    }
+    runFree(f)(t)(freeMonad[G])
+  }
 
-  def runConsole[A](a: Free[Console,A]): A = ???
+  def runConsole[A](a: Free[Console,A]): A = runTrampoline { translate(a)(new (Console ~> Function0) {
+    def apply[A](c: Console[A]) = c.toThunk
+  })}
 
   /*
   There is nothing about `Free[Console,A]` that requires we interpret
